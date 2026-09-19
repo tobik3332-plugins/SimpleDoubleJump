@@ -1,0 +1,19 @@
+name: SimpleDoubleJump
+version: 1.0
+main: com.rarehyperion.simpledoublejump.SimpleDoubleJump
+api-version: '1.20'
+commands:
+  sdj:
+    description: Hlavní příkaz pro SimpleDoubleJump
+    permission: sdj.admin
+    usage: /sdj [reload|area|tparea]
+permissions:
+  sdj.admin:
+    description: Plný přístup k administraci oblastí a reloadu
+    default: op
+  sdj.use:
+    description: Základní právo na používání double jumpu
+    default: true
+  sdj.area.use.*:
+    description: Povolí double jump ve všech oblastech
+    default: op
