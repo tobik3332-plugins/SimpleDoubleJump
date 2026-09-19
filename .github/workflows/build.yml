@@ -27,5 +27,5 @@ jobs:
     - name: Uložení vytvořeného JAR souboru
       uses: actions/upload-artifact@v4
       with:
-        name: SimpleDoubleJump-Plugin
+        name: SimpleDoubleJump
         path: target/*.jar
