@@ -28,7 +28,7 @@ public final class SimpleDoubleJump extends JavaPlugin implements CommandExecuto
         }
 
         getServer().getPluginManager().registerEvents(new DoubleJumpManager(this), this);
-        getLogger().getLogger().info("SimpleDoubleJump úspěšně spuštěn!");
+        getLogger().info("SimpleDoubleJump úspěšně spuštěn!");
     }
 
     @Override
@@ -182,7 +182,6 @@ public final class SimpleDoubleJump extends JavaPlugin implements CommandExecuto
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        List. lesquels = new ArrayList<>();
         List<String> result = new ArrayList<>();
 
         if (args.length == 1) {
