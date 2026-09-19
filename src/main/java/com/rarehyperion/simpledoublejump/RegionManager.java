@@ -59,6 +59,18 @@ public class RegionManager {
         }
     }
 
+    public boolean deleteRegion(String name) {
+        Region reg = regions.remove(name.toLowerCase());
+        if (reg != null) {
+            File file = new File(new File(plugin.getDataFolder(), "areas"), name + ".yml");
+            if (file.exists()) {
+                file.delete();
+            }
+            return true;
+        }
+        return false;
+    }
+
     public Region findRegionAt(org.bukkit.Location loc) {
         for (Region reg : regions.values()) {
             if (reg.contains(loc)) {
