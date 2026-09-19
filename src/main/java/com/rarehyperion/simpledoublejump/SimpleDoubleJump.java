@@ -1,7 +1,6 @@
 package com.rarehyperion.simpledoublejump;
 
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.command.Command;
@@ -12,10 +11,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public final class SimpleDoubleJump extends JavaPlugin implements CommandExecutor, TabCompleter {
     private RegionManager regionManager;
+    private final Map<String, Long> pendingDeletions = new HashMap<>();
 
     @Override
     public void onEnable() {
@@ -70,6 +72,7 @@ public final class SimpleDoubleJump extends JavaPlugin implements CommandExecuto
 
         if (args.length >= 2 && args[0].equalsIgnoreCase("area")) {
             String subAction = args[1].toLowerCase();
+
             if (subAction.equals("create") && args.length == 3) {
                 String regName = args[2];
                 Region pending = regionManager.getPending(regName);
@@ -79,6 +82,31 @@ public final class SimpleDoubleJump extends JavaPlugin implements CommandExecuto
                 } else {
                     regionManager.confirmCreation(regName);
                     sender.sendMessage(ChatColor.GREEN + "Oblast '" + regName + "' byla úspěšně vytvořena a uložena!");
+                }
+                return true;
+            }
+
+            if (subAction.equals("delete") && args.length == 3) {
+                String regName = args[2].toLowerCase();
+                Region reg = regionManager.getRegion(regName);
+                if (reg == null) {
+                    sender.sendMessage(ChatColor.RED + "Oblast '" + args[2] + "' neexistuje.");
+                    return true;
+                }
+
+                long now = System.currentTimeMillis();
+                Long lastRequest = pendingDeletions.get(regName);
+
+                if (lastRequest != null && (now - lastRequest) <= 5000) {
+                    pendingDeletions.remove(regName);
+                    if (regionManager.deleteRegion(regName)) {
+                        sender.sendMessage(ChatColor.GREEN + "Oblast '" + reg.getName() + "' byla úspěšně smazána!");
+                    } else {
+                        sender.sendMessage(ChatColor.RED + "Při mazání oblasti došlo k chybě.");
+                    }
+                } else {
+                    pendingDeletions.put(regName, now);
+                    sender.sendMessage(ChatColor.RED + "Opravdu chceš smazat oblast '" + reg.getName() + "'? Napiš tento příkaz znovu do 5 sekund pro potvrzení!");
                 }
                 return true;
             }
@@ -194,6 +222,7 @@ public final class SimpleDoubleJump extends JavaPlugin implements CommandExecuto
             }
         } else if (args.length == 2 && args[0].equalsIgnoreCase("area")) {
             result.add("create");
+            result.add("delete");
             result.add("pos1");
             result.add("pos2");
             result.add("jumpvertical");
