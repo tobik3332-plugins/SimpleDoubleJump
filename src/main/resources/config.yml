@@ -1,0 +1,15 @@
+# ==========================================
+# SimpleDoubleJump - Globální Konfigurace
+# ==========================================
+
+# Ochrana před poškozením pádem při použití double jumpu
+fall-damage-protection: true
+
+# Ochrana proti konfliktům s kreativním / spectator létáním
+avoid-fly-conflicts: true
+
+# PŘEHLED OPRÁVNĚNÍ (Permissions):
+# - sdj.admin : Umožňuje vytvářet oblasti, upravovat je a provádět /sdj reload
+# - sdj.use : Základní právo pro použití double jumpu (pokud je vyžadováno)
+# - sdj.area.use.<nazev> : Povoluje double jump v konkrétní oblasti
+# - sdj.area.use.* : Povoluje double jump ve všech oblastech bez výjimky
