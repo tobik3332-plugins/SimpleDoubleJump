@@ -7,6 +7,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.util.Vector;
 
@@ -20,6 +21,7 @@ public class DoubleJumpManager implements Listener {
     private final SimpleDoubleJump plugin;
     private final Set<UUID> fallingProtections = new HashSet<>();
     private final Map<UUID, Map<String, Long>> cooldowns = new HashMap<>();
+    private final Map<UUID, Integer> airJumpsUsed = new HashMap<>();
 
     public DoubleJumpManager(SimpleDoubleJump plugin) {
         this.plugin = plugin;
@@ -31,17 +33,35 @@ public class DoubleJumpManager implements Listener {
         if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) return;
         if (plugin.getConfig().getBoolean("avoid-fly-conflicts", true) && player.isFlying()) return;
 
+        Region region = plugin.getRegionManager().findRegionAt(player.getLocation());
+
         if (player.isOnGround()) {
-            if (!player.getAllowFlight()) {
-                Region region = plugin.getRegionManager().findRegionAt(player.getLocation());
-                if (region != null && hasPermission(player, region)) {
+            // Po dopadu na zem vynulujeme použité skoky ve vzduchu
+            airJumpsUsed.remove(player.getUniqueId());
+
+            if (region != null && hasPermission(player, region)) {
+                if (!player.getAllowFlight()) {
                     player.setAllowFlight(true);
+                }
+            } else {
+                if (player.getAllowFlight()) {
+                    player.setAllowFlight(false);
                 }
             }
         } else {
-            Region region = plugin.getRegionManager().findRegionAt(player.getLocation());
-            if (region == null && player.getAllowFlight()) {
-                player.setAllowFlight(false);
+            // Hráč je ve vzduchu – pokud opustí oblast nebo ztratí oprávnění, okamžitě vypneme možnost dalšího skoku
+            if (region == null || !hasPermission(player, region)) {
+                if (player.getAllowFlight()) {
+                    player.setAllowFlight(false);
+                }
+                airJumpsUsed.remove(player.getUniqueId());
+            } else {
+                // Pokud hráč skočil z okraje (nespouštěl double jump, ale je stále v oblasti), povolíme mu skok ve vzduchu
+                int used = airJumpsUsed.getOrDefault(player.getUniqueId(), 0);
+                int max = region.getMaxAirJumps();
+                if ((max == -1 || used < max) && !player.getAllowFlight()) {
+                    player.setAllowFlight(true);
+                }
             }
         }
     }
@@ -55,8 +75,16 @@ public class DoubleJumpManager implements Listener {
         if (region == null || !hasPermission(player, region)) return;
 
         event.setCancelled(true);
-        player.setAllowFlight(false);
         player.setFlying(false);
+
+        int used = airJumpsUsed.getOrDefault(player.getUniqueId(), 0);
+        int max = region.getMaxAirJumps();
+
+        // Kontrola, zda hráč již nevyčerpal povolený počet skoků ve vzduchu
+        if (max != -1 && used >= max) {
+            player.setAllowFlight(false);
+            return;
+        }
 
         // Cooldown check
         if (region.getCooldown() > 0) {
@@ -68,6 +96,17 @@ public class DoubleJumpManager implements Listener {
                 return;
             }
             playerCd.put(region.getName().toLowerCase(), now);
+        }
+
+        // Zvýšíme počítadlo použitých skoků
+        used++;
+        airJumpsUsed.put(player.getUniqueId(), used);
+
+        // Pokud má hráč k dispozici ještě další skoky (nebo je nastaveno multiple), necháme allowFlight zapnuté
+        if (max == -1 || used < max) {
+            player.setAllowFlight(true);
+        } else {
+            player.setAllowFlight(false);
         }
 
         // Apply Double Jump Velocity
@@ -101,6 +140,14 @@ public class DoubleJumpManager implements Listener {
                 }
             }
         }
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        UUID uuid = event.getPlayer().getUniqueId();
+        fallingProtections.remove(uuid);
+        airJumpsUsed.remove(uuid);
+        cooldowns.remove(uuid);
     }
 
     private boolean hasPermission(Player player, Region region) {
