@@ -151,6 +151,16 @@ public final class SimpleDoubleJump extends JavaPlugin implements CommandExecuto
 
                 try {
                     switch (subAction) {
+                        case "type":
+                            String type = args[3].toLowerCase();
+                            if (!type.equals("double") && !type.equals("triple") && !type.equals("quadruple") && !type.equals("multiple")) {
+                                sender.sendMessage(ChatColor.RED + "Neplatný typ! Povolené hodnoty: double, triple, quadruple, multiple.");
+                                return true;
+                            }
+                            reg.setJumpType(type);
+                            reg.save();
+                            sender.sendMessage(ChatColor.GREEN + "Typ jumpu pro oblast " + reg.getName() + " nastaven na: " + type);
+                            break;
                         case "jumpvertical":
                             reg.setJumpVertical(Double.parseDouble(args[3]));
                             reg.save();
@@ -225,6 +235,7 @@ public final class SimpleDoubleJump extends JavaPlugin implements CommandExecuto
             result.add("delete");
             result.add("pos1");
             result.add("pos2");
+            result.add("type");
             result.add("jumpvertical");
             result.add("jumphorizontal");
             result.add("cooldown");
@@ -240,7 +251,12 @@ public final class SimpleDoubleJump extends JavaPlugin implements CommandExecuto
             }
         } else if (args.length == 4 && args[0].equalsIgnoreCase("area")) {
             String sub = args[1].toLowerCase();
-            if (sub.equals("effect")) {
+            if (sub.equals("type")) {
+                result.add("double");
+                result.add("triple");
+                result.add("quadruple");
+                result.add("multiple");
+            } else if (sub.equals("effect")) {
                 for (Particle p : Particle.values()) {
                     result.add(p.name());
                 }
