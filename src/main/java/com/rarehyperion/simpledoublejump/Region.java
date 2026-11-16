@@ -15,6 +15,7 @@ public class Region {
     private final String name;
     private String worldName;
     private int x1, y1, z1, x2, y2, z2;
+    private String jumpType = "double"; // double, triple, quadruple, multiple
     private double jumpVertical = 1.0;
     private double jumpHorizontal = 1.0;
     private long cooldown = 0; // v sekundách
@@ -51,6 +52,7 @@ public class Region {
         config.set("x2", x2);
         config.set("y2", y2);
         config.set("z2", z2);
+        config.set("jump-type", jumpType);
         config.set("jump-vertical", jumpVertical);
         config.set("jump-horizontal", jumpHorizontal);
         config.set("cooldown", cooldown);
@@ -78,25 +80,34 @@ public class Region {
         x2 = config.getInt("x2");
         y2 = config.getInt("y2");
         z2 = config.getInt("z2");
+        jumpType = config.getString("jump-type", "double").toLowerCase();
         jumpVertical = config.getDouble("jump-vertical", 1.0);
         jumpHorizontal = config.getDouble("jump-horizontal", 1.0);
         cooldown = config.getLong("cooldown", 0);
-        
+
         try {
             effect = Particle.valueOf(config.getString("effect", "CAMPFIRE_COSY_SMOKE"));
         } catch (Exception ignored) {}
-        
+
         effectCount = config.getInt("effect-count", 10);
         effectSpread = config.getDouble("effect-spread", 0.5);
-        
+
         try {
             sound = Sound.valueOf(config.getString("sound", "ENTITY_BAT_TAKEOFF"));
         } catch (Exception ignored) {}
-        
-        float p = (float) config.getDouble("sound-pitch", 1.0);
-        soundPitch = p;
-        float v = (float) config.getDouble("sound-volume", 1.0);
-        soundVolume = v;
+
+        soundPitch = (float) config.getDouble("sound-pitch", 1.0);
+        soundVolume = (float) config.getDouble("sound-volume", 1.0);
+    }
+
+    // Vrátí maximální počet skoků ve vzduchu (-1 znamená neomezeně)
+    public int getMaxAirJumps() {
+        return switch (jumpType.toLowerCase()) {
+            case "triple" -> 2;
+            case "quadruple" -> 3;
+            case "multiple" -> -1;
+            default -> 1; // "double"
+        };
     }
 
     // Getters and Setters
@@ -118,6 +129,8 @@ public class Region {
         World w = Bukkit.getWorld(worldName);
         return w != null ? new Location(w, x1, y1, z1) : null;
     }
+    public String getJumpType() { return jumpType; }
+    public void setJumpType(String jumpType) { this.jumpType = jumpType.toLowerCase(); }
     public double getJumpVertical() { return jumpVertical; }
     public void setJumpVertical(double jumpVertical) { this.jumpVertical = jumpVertical; }
     public double getJumpHorizontal() { return jumpHorizontal; }
